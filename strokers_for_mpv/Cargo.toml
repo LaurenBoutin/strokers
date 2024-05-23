@@ -1,0 +1,13 @@
+[package]
+name = "strokers_for_mpv"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lib]
+name = "strokers_for_mpv"
+crate-type = ["cdylib"]
+
+[dependencies]
+mpv-client = "0.6.2"

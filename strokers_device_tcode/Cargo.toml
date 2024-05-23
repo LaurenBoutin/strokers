@@ -1,0 +1,21 @@
+[package]
+name = "strokers_device_tcode"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+eyre.workspace = true
+tokio-util = { workspace = true, features = ["codec"] }
+tokio-stream.workspace = true
+futures-util = { workspace = true, features = ["sink"] }
+serial2-tokio.workspace = true
+async-trait.workspace = true
+tracing.workspace = true
+
+strokers_core.workspace = true
+
+
+tracing-subscriber.workspace = true
+tokio.workspace = true
