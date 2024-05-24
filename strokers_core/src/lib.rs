@@ -22,11 +22,12 @@ pub struct AxisId(pub u32);
 pub struct AxisDescriptor {
     pub axis_id: AxisId,
     pub axis_kind: AxisKind,
+    pub suggested_safe_speed_limit: f32,
 }
 
 /// The kind of axis
 /// This includes special axes like vibration/lubricant
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[non_exhaustive]
 pub enum AxisKind {
     /// Up/Down (T-Code: `L0`)

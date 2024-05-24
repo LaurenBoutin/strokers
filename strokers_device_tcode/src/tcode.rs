@@ -34,6 +34,7 @@ pub(crate) fn movement_to_tcode(
 /// A0 0 9999 Valve
 /// A1 0 9999 Suck
 /// ```
+#[allow(dead_code)]
 pub(crate) struct DiscoveredAxisInfo {
     pub tcode_axis_name: String,
     pub preferred_min: u16,

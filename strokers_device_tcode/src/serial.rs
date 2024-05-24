@@ -1,4 +1,4 @@
-use std::{collections::BTreeMap, str::FromStr, time::Duration};
+use std::{collections::BTreeMap, path::Path, str::FromStr, time::Duration};
 
 use async_trait::async_trait;
 use eyre::{Context, ContextCompat};
@@ -7,9 +7,7 @@ use serial2_tokio::SerialPort;
 use strokers_core::{AxisDescriptor, AxisId, AxisKind, Stroker};
 use tokio::time::timeout;
 use tokio_stream::StreamExt;
-use tokio_util::{
-    codec::{Decoder, Framed, LinesCodec},
-};
+use tokio_util::codec::{Decoder, Framed, LinesCodec};
 use tracing::{debug, error, warn};
 
 use crate::tcode::{movement_to_tcode, DiscoveredAxisInfo};
@@ -21,7 +19,12 @@ pub struct SerialTCodeStroker {
 }
 
 impl SerialTCodeStroker {
-    pub async fn connect(serial_port: SerialPort) -> eyre::Result<SerialTCodeStroker> {
+    pub async fn connect(
+        serial_port_path: impl AsRef<Path>,
+        baud: u32,
+    ) -> eyre::Result<SerialTCodeStroker> {
+        let serial_port =
+            SerialPort::open(serial_port_path, baud).context("failed to open serial port")?;
         serial_port
             .discard_buffers()
             .context("failed to discard buffers")?;
@@ -109,7 +112,12 @@ impl Stroker for SerialTCodeStroker {
                     continue;
                 }
             };
-            result.push(AxisDescriptor { axis_id, axis_kind });
+            result.push(AxisDescriptor {
+                axis_id,
+                axis_kind,
+                // TODO I don't like this here, it feels like there should be a better way...
+                suggested_safe_speed_limit: 1.0,
+            });
         }
         result
     }

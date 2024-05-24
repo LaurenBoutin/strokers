@@ -4,9 +4,9 @@ members = [
   "strokers_core",
   "strokers_device_tcode",
   "strokers_device_debug",
-  "strokers_for_mpv",
-  "strokers_funscript"
+  "strokers_for_mpv"
 ]
+resolver = "2"
 
 [workspace.dependencies]
 # Logging
@@ -24,7 +24,8 @@ futures-util = "0.3.30"
 
 # I/O
 serial2-tokio = { version = "0.1.10", git = "https://github.com/LaurenBoutin/serial2-tokio-rs", branch = "fix_write" }
-
+serde = { version = "1.0.202", features = ["derive"] }
+serde_json = "1.0.117"
 
 
 # Our own crates in this repository
@@ -32,3 +33,4 @@ strokers = { path = "./strokers" }
 strokers_core = { path = "./strokers_core" }
 strokers_device_debug = { path = "./strokers_device_debug" }
 strokers_device_tcode = { path = "./strokers_device_tcode" }
+strokers_funscript = { path = "./strokers_funscript" }

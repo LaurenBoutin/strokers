@@ -1,7 +1,6 @@
 use std::time::Duration;
 
 use eyre::Context;
-use serial2_tokio::SerialPort;
 use strokers_core::{Movement, Stroker};
 use strokers_device_tcode::SerialTCodeStroker;
 use tracing::info;
@@ -17,11 +16,9 @@ async fn main() -> eyre::Result<()> {
         .with(tracing_subscriber::fmt::layer().with_span_events(FmtSpan::CLOSE))
         .init();
 
-    info!("opening serial port");
-    let serial_port =
-        SerialPort::open("/dev/ttyUSB0", 115200).context("failed to open serial port")?;
     info!("connecting to t-code device");
-    let mut stroker = SerialTCodeStroker::connect(serial_port)
+    // TODO this should not be hardcoded
+    let mut stroker = SerialTCodeStroker::connect("/dev/pts/40", 115200)
         .await
         .context("failed to connect to serial port T-Code device")?;
     info!("connected to t-code device");

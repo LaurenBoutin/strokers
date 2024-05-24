@@ -11,3 +11,15 @@ crate-type = ["cdylib"]
 
 [dependencies]
 mpv-client = "0.6.2"
+
+strokers.workspace = true
+strokers_funscript.workspace = true
+
+eyre.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+tokio = { workspace = true, features = ["fs"] }
+tokio-util.workspace = true
+serde_json.workspace = true
+
+flume = "0.11.0"
