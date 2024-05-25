@@ -23,7 +23,6 @@ pub struct AxisId(pub u32);
 pub struct AxisDescriptor {
     pub axis_id: AxisId,
     pub axis_kind: AxisKind,
-    pub suggested_safe_speed_limit: f32,
 }
 
 /// The kind of axis

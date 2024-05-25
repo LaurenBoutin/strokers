@@ -112,12 +112,7 @@ impl Stroker for SerialTCodeStroker {
                     continue;
                 }
             };
-            result.push(AxisDescriptor {
-                axis_id,
-                axis_kind,
-                // TODO I don't like this here, it feels like there should be a better way...
-                suggested_safe_speed_limit: 1.0,
-            });
+            result.push(AxisDescriptor { axis_id, axis_kind });
         }
         result
     }
