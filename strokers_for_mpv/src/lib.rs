@@ -127,6 +127,6 @@ async fn start_playtask(
     let stroker = strokers::open_stroker(&config.stroker)
         .await
         .context("failed to connect to Stroker")?;
-    playthread::playtask(stroker, rx, tx).await?;
+    playthread::playtask(stroker, config, rx, tx).await?;
     Ok(())
 }

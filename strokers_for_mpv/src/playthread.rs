@@ -2,7 +2,10 @@ use std::{path::PathBuf, sync::Arc};
 
 use eyre::{Context, ContextCompat};
 use flume::{Receiver, Sender};
-use strokers::core::{AxisKind, Stroker};
+use strokers::{
+    config::LimitsConfig,
+    core::{AxisKind, Stroker},
+};
 use strokers_funscript::{
     processing::{normalised_from_funscript, NormalisedAction},
     schema::Funscript,
@@ -36,6 +39,7 @@ pub enum PlaythreadMessage {
 
 pub(crate) async fn playtask(
     mut stroker: impl Stroker,
+    config: strokers::config::RootConfig,
     rx: Receiver<PlaythreadMessage>,
     tx: Sender<PlaythreadMessage>,
 ) -> eyre::Result<()> {
@@ -94,14 +98,25 @@ pub(crate) async fn playtask(
                     continue;
                 };
 
+                let limits = match config.limits.get(&axis.axis_kind) {
+                    Some(limits) => limits,
+                    None => {
+                        warn!("Axis {:?} has no limits configured; using some very pessimistic/safe/boring ones!", axis.axis_kind);
+                        &LimitsConfig {
+                            speed: 0.25,
+                            default_min: 0.4,
+                            default_max: 0.6,
+                        }
+                    }
+                };
+
                 playstate.by_axis.insert(
                     axis.axis_id,
                     AxisPlaystate::new(
                         Arc::new(normalised_actions),
-                        axis.suggested_safe_speed_limit,
-                        // TODO The min and max should not be hardcoded, plus they should be changeable on the fly
-                        0.25,
-                        0.75,
+                        limits.speed,
+                        limits.default_min,
+                        limits.default_max,
                     ),
                 );
             }
