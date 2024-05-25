@@ -15,7 +15,7 @@ pub(crate) struct Playstate {
 
 pub(crate) struct AxisPlaystate {
     funscript: FunscriptPlaystate,
-    pub speed_limiter: AxisLimiter,
+    pub limiter: AxisLimiter,
 }
 
 impl AxisPlaystate {
@@ -27,7 +27,7 @@ impl AxisPlaystate {
     ) -> AxisPlaystate {
         AxisPlaystate {
             funscript: FunscriptPlaystate::new(normalised_actions),
-            speed_limiter: AxisLimiter::new(speed_limit, min, max),
+            limiter: AxisLimiter::new(speed_limit, min, max),
         }
     }
     pub async fn tick(
@@ -42,9 +42,9 @@ impl AxisPlaystate {
             }
             let now = Instant::now();
             let (new_target, new_target_duration) =
-                self.speed_limiter
+                self.limiter
                     .limit_command(now, action.norm_pos, action.at - now_millis);
-            self.speed_limiter
+            self.limiter
                 .notify_commanded(now, new_target, new_target_duration);
             stroker
                 .movement(
@@ -79,9 +79,9 @@ impl AxisPlaystate {
             let orig_target_duration = if paused { 1000 } else { action.at - now_millis };
 
             let (new_target, new_target_duration) =
-                self.speed_limiter
+                self.limiter
                     .limit_command(now, action.norm_pos, orig_target_duration);
-            self.speed_limiter
+            self.limiter
                 .notify_commanded(now, new_target, new_target_duration);
             stroker
                 .movement(

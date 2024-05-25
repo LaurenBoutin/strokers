@@ -179,7 +179,7 @@ pub(crate) async fn playtask(
                         continue;
                     };
 
-                    if let Err(err) = update_limits(&cmd, &mut axis.speed_limiter) {
+                    if let Err(err) = update_limits(&cmd, &mut axis.limiter) {
                         error!("Error updating axis limits for {:?}: {err:?}", cmd.axis);
                     }
                 }
