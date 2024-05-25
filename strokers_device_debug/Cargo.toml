@@ -6,3 +6,8 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+strokers_core.workspace = true
+
+async-trait.workspace = true
+eyre.workspace = true
+tracing.workspace = true

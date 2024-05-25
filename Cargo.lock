@@ -598,6 +598,12 @@ dependencies = [
 [[package]]
 name = "strokers_device_debug"
 version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "eyre",
+ "strokers_core",
+ "tracing",
+]
 
 [[package]]
 name = "strokers_device_tcode"
@@ -639,6 +645,7 @@ dependencies = [
  "serde",
  "serde_json",
  "strokers_core",
+ "tracing",
 ]
 
 [[package]]

@@ -19,6 +19,7 @@ use config::{RootConfig, StrokerConfig};
 use devices::AnyStroker;
 use eyre::ContextCompat;
 pub use strokers_core as core;
+use strokers_device_debug::DebugStroker;
 use strokers_device_tcode::SerialTCodeStroker;
 use thiserror::Error;
 
@@ -79,6 +80,6 @@ pub async fn open_stroker(config: &StrokerConfig) -> Result<AnyStroker, Strokers
                 .map_err(StrokersError::Connection)?;
             Ok(AnyStroker::new(stroker))
         }
-        StrokerConfig::Debug => todo!(),
+        StrokerConfig::Debug => Ok(AnyStroker::new(DebugStroker::new())),
     }
 }
