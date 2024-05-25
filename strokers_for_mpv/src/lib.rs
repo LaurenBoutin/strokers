@@ -4,9 +4,12 @@ use eyre::Context;
 use flume::{Receiver, Sender};
 use mpv_client::{mpv_handle, Event, Handle};
 use playthread::PlaythreadMessage;
-use tracing::{error, info};
+use tracing::{debug, error, info};
 use tracing_subscriber::{fmt::format::FmtSpan, layer::SubscriberExt, util::SubscriberInitExt};
 
+use crate::keybindings::parse_action;
+
+pub(crate) mod keybindings;
 pub(crate) mod playstate;
 mod playthread;
 
@@ -107,6 +110,25 @@ extern "C" fn mpv_open_cplugin(handle: *mut mpv_handle) -> std::os::raw::c_int {
                     now_millis: time_millis_u32,
                 }) {
                     error!("Couldn't send seek event to playtask.");
+                }
+            }
+            Event::ClientMessage(client_message) => {
+                let args = client_message.args();
+                if args[0] != "key-binding" || &args[2][0..1] != "u" {
+                    // the message is either not a keybinding or not a released key
+                    continue;
+                }
+
+                match parse_action(&args[1]) {
+                    Ok(action) => {
+                        debug!("Keybinding triggered: {action:?}");
+                        if let Err(_) = tx.send(PlaythreadMessage::KeyCommand(action)) {
+                            error!("Couldn't send key command to playtask.");
+                        }
+                    }
+                    Err(err) => {
+                        error!("{err:?}");
+                    }
                 }
             }
             event => {

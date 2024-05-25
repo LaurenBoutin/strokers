@@ -1,6 +1,6 @@
 use std::{path::PathBuf, sync::Arc};
 
-use eyre::{Context, ContextCompat};
+use eyre::{bail, Context, ContextCompat};
 use flume::{Receiver, Sender};
 use strokers::{
     config::LimitsConfig,
@@ -14,7 +14,10 @@ use strokers_funscript::{
 use tokio_util::sync::CancellationToken;
 use tracing::{debug, error, info, warn};
 
-use crate::playstate::{AxisPlaystate, Playstate};
+use crate::{
+    keybindings::{AxisLimitChangeCommand, KeyCommand},
+    playstate::{AxisLimiter, AxisPlaystate, Playstate},
+};
 
 #[derive(Clone, Debug)]
 pub enum PlaythreadMessage {
@@ -35,6 +38,8 @@ pub enum PlaythreadMessage {
     PauseChange { paused: bool },
     /// MPV is shutting down so we should too
     Shutdown {},
+    /// A key command was triggered
+    KeyCommand(KeyCommand),
 }
 
 pub(crate) async fn playtask(
@@ -160,8 +165,62 @@ pub(crate) async fn playtask(
                     .await
                     .context("failed to stop stroker upon shutdown")?;
             }
+            PlaythreadMessage::KeyCommand(cmd) => match cmd {
+                KeyCommand::AxisLimitChange(cmd) => {
+                    let Some(axis) = axes.iter().find(|axis| axis.axis_kind == cmd.axis) else {
+                        warn!("Can't change axis limits for {:?} as there is no corresponding stroker axis", cmd.axis);
+                        continue;
+                    };
+                    let Some(axis) = playstate.by_axis.get_mut(&axis.axis_id) else {
+                        warn!(
+                            "Can't change axis limits for {:?} as the axis is not in use.",
+                            cmd.axis
+                        );
+                        continue;
+                    };
+
+                    if let Err(err) = update_limits(&cmd, &mut axis.speed_limiter) {
+                        error!("Error updating axis limits for {:?}: {err:?}", cmd.axis);
+                    }
+                }
+            },
         }
     }
+    Ok(())
+}
+
+/// Updates an axis's limits.
+/// There is nothing preventing max < min although both limits are prevented from going out of range.
+/// We can cheekily call max < min a 'feature' to allow inverting the motion *cough cough*.
+fn update_limits(cmd: &AxisLimitChangeCommand, limits: &mut AxisLimiter) -> eyre::Result<()> {
+    fn update_axis(
+        name: &str,
+        by: &Option<f32>,
+        new: &Option<f32>,
+        target: &mut f32,
+    ) -> eyre::Result<()> {
+        match (by, new) {
+            (Some(_), Some(_)) => {
+                bail!("Conflicting axis_limit parameters for {name}");
+            }
+            (Some(by), None) => {
+                *target = (*target + by).clamp(0.0, 1.0);
+            }
+            (None, Some(new)) => {
+                if *new < 0.0 || 1.0 < *new {
+                    bail!("Can't set limit to {new:?} as that's out of range!");
+                }
+                *target = *new;
+            }
+            (None, None) => {
+                // nop
+            }
+        }
+        Ok(())
+    }
+
+    update_axis("min", &cmd.min_by, &cmd.min_new, &mut limits.min)?;
+    update_axis("max", &cmd.max_by, &cmd.max_new, &mut limits.max)?;
     Ok(())
 }
 

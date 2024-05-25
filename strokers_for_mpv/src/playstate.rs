@@ -15,7 +15,7 @@ pub(crate) struct Playstate {
 
 pub(crate) struct AxisPlaystate {
     funscript: FunscriptPlaystate,
-    speed_limiter: AxisLimiter,
+    pub speed_limiter: AxisLimiter,
 }
 
 impl AxisPlaystate {
