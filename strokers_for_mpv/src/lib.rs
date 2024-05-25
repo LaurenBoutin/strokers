@@ -4,7 +4,6 @@ use eyre::Context;
 use flume::{Receiver, Sender};
 use mpv_client::{mpv_handle, Event, Handle};
 use playthread::PlaythreadMessage;
-use strokers::devices::tcode::SerialTCodeStroker;
 use tracing::{error, info};
 use tracing_subscriber::{fmt::format::FmtSpan, layer::SubscriberExt, util::SubscriberInitExt};
 
@@ -75,7 +74,7 @@ extern "C" fn mpv_open_cplugin(handle: *mut mpv_handle) -> std::os::raw::c_int {
             },
             Event::PropertyChange(REPLY_TIME, time_prop) => {
                 let Some(time) = time_prop.data::<f64>() else {
-                    error!("can't read {PROP_TIME} as f64");
+                    error!("On change, can't read {PROP_TIME} as f64");
                     continue;
                 };
                 let Ok(time_millis_u32): Result<u32, _> = ((time * 1000.0) as i64).try_into()
@@ -122,10 +121,12 @@ async fn start_playtask(
     rx: Receiver<PlaythreadMessage>,
     tx: Sender<PlaythreadMessage>,
 ) -> eyre::Result<()> {
-    // TODO this should not be hardcoded
-    let stroker = SerialTCodeStroker::connect("/dev/pts/40", 115200)
+    let config = strokers::load_config()
         .await
-        .context("failed to open stroker")?;
+        .context("failed to load Strokers configuration")?;
+    let stroker = strokers::open_stroker(&config.stroker)
+        .await
+        .context("failed to connect to Stroker")?;
     playthread::playtask(stroker, rx, tx).await?;
     Ok(())
 }
