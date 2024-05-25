@@ -61,8 +61,8 @@ pub struct Movement {
     /// The target position of the axis; normalised between 0.0 and 1.0
     target: f32,
     /// How long, in milliseconds, to take to ramp to this value.
-    /// Between 0 and 9999
-    ramp_time_milliseconds: u16,
+    /// Between 0 and 9999999 (this upper limit is taken from the OSR2's implementation)
+    ramp_time_milliseconds: u32,
 }
 
 impl Movement {
@@ -71,14 +71,18 @@ impl Movement {
     /// - `axis`: The ID of the axis to move
     /// - `target`: The target position of the axis; normalised between 0.0 and 1.0
     /// - `ramp_time_milliseconds`: How long, in milliseconds, to take to ramp to this value.
-    ///   Between 0 and 9999
+    ///   Between 0 and 9999999 (this upper limit is taken from the OSR2's implementation)
     ///
     /// Returns the Movement or `None` if the specified parameters were not valid.
-    pub fn new(axis: AxisId, target: f32, ramp_time_milliseconds: u16) -> Option<Movement> {
+    pub fn new(axis: AxisId, target: f32, ramp_time_milliseconds: u32) -> Option<Movement> {
+        const MAX_RAMP_TIME_MS: u32 = 9999999;
         if target < 0.0 || target > 1.0 {
             return None;
         };
-        if ramp_time_milliseconds > 9999 {
+        if !target.is_finite() {
+            return None;
+        }
+        if ramp_time_milliseconds > MAX_RAMP_TIME_MS {
             return None;
         };
 
@@ -97,7 +101,7 @@ impl Movement {
         self.target
     }
 
-    pub fn ramp_time_milliseconds(&self) -> u16 {
+    pub fn ramp_time_milliseconds(&self) -> u32 {
         self.ramp_time_milliseconds
     }
 }

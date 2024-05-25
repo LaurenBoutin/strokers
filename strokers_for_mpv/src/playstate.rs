@@ -48,11 +48,15 @@ impl AxisPlaystate {
                 .notify_commanded(now, new_target, new_target_duration);
             stroker
                 .movement(
-                    Movement::new(axis_id, new_target, new_target_duration as u16)
-                        .context("failed to construct movement")?,
+                    Movement::new(axis_id, new_target, new_target_duration)
+                    .with_context(|| {
+                        format!("failed to construct movement from pos:{new_target}, {new_target_duration}ms")
+                    })?,
                 )
                 .await
-                .context("failed to command movement")?;
+                .with_context(|| {
+                    format!("failed to command movement from pos:{new_target}, {new_target_duration}ms")
+                })?;
         }
 
         Ok(())
@@ -81,11 +85,15 @@ impl AxisPlaystate {
                 .notify_commanded(now, new_target, new_target_duration);
             stroker
                 .movement(
-                    Movement::new(axis_id, new_target, new_target_duration as u16)
-                        .context("failed to construct movement")?,
+                    Movement::new(axis_id, new_target, new_target_duration)
+                    .with_context(|| {
+                        format!("failed to construct seek movement from pos:{new_target}, {new_target_duration}ms")
+                    })?,
                 )
                 .await
-                .context("failed to command movement")?;
+                .with_context(|| {
+                    format!("failed to command seek movement from pos:{new_target}, {new_target_duration}ms")
+                })?;
         }
 
         Ok(())
