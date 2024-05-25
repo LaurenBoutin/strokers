@@ -46,11 +46,9 @@ pub(crate) async fn playtask(
     let mut funscript_load_ctoken: Option<CancellationToken> = None;
 
     while let Ok(msg) = rx.recv_async().await {
-        if !matches!(&msg, PlaythreadMessage::TimeChange { .. }) {
-            debug!("playtask: {msg:?}");
-        }
         match msg {
             PlaythreadMessage::VideoStarting { video_path } => {
+                debug!("VideoStarting: {video_path:?}");
                 let video_dir = video_path
                     .parent()
                     .context("video has no parent")?
@@ -87,6 +85,10 @@ pub(crate) async fn playtask(
                 axis_kind,
                 normalised_actions,
             } => {
+                debug!(
+                    "UseFunscript: {axis_kind:?} ({} actions)",
+                    normalised_actions.len()
+                );
                 let Some(axis) = axes.iter().find(|axis| axis.axis_kind == axis_kind) else {
                     warn!("can't use loaded funscript for {axis_kind:?} because the stroker doesn't have an axis for it");
                     continue;
@@ -97,10 +99,14 @@ pub(crate) async fn playtask(
                     AxisPlaystate::new(
                         Arc::new(normalised_actions),
                         axis.suggested_safe_speed_limit,
+                        // TODO The min and max should not be hardcoded, plus they should be changeable on the fly
+                        0.25,
+                        0.75,
                     ),
                 );
             }
             PlaythreadMessage::Seek { now_millis } => {
+                debug!("Seek: {now_millis}");
                 for (&axis_id, axis_playstate) in playstate.by_axis.iter_mut() {
                     axis_playstate
                         .seek(now_millis, paused, axis_id, &mut stroker)
@@ -120,6 +126,7 @@ pub(crate) async fn playtask(
                 }
             }
             PlaythreadMessage::PauseChange { paused: new_paused } => {
+                debug!("PauseChange: {paused}");
                 paused = new_paused;
                 if paused {
                     stroker
@@ -132,6 +139,7 @@ pub(crate) async fn playtask(
                 }
             }
             PlaythreadMessage::Shutdown {} => {
+                debug!("Shutdown");
                 stroker
                     .stop()
                     .await

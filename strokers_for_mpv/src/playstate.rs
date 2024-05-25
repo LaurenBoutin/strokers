@@ -15,14 +15,19 @@ pub(crate) struct Playstate {
 
 pub(crate) struct AxisPlaystate {
     funscript: FunscriptPlaystate,
-    speed_limiter: SpeedLimiter,
+    speed_limiter: AxisLimiter,
 }
 
 impl AxisPlaystate {
-    pub fn new(normalised_actions: Arc<Vec<NormalisedAction>>, speed_limit: f32) -> AxisPlaystate {
+    pub fn new(
+        normalised_actions: Arc<Vec<NormalisedAction>>,
+        speed_limit: f32,
+        min: f32,
+        max: f32,
+    ) -> AxisPlaystate {
         AxisPlaystate {
             funscript: FunscriptPlaystate::new(normalised_actions),
-            speed_limiter: SpeedLimiter::new(speed_limit),
+            speed_limiter: AxisLimiter::new(speed_limit, min, max),
         }
     }
     pub async fn tick(
@@ -38,7 +43,7 @@ impl AxisPlaystate {
             let now = Instant::now();
             let (new_target, new_target_duration) =
                 self.speed_limiter
-                    .limit_speed(now, action.norm_pos, action.at - now_millis);
+                    .limit_command(now, action.norm_pos, action.at - now_millis);
             self.speed_limiter
                 .notify_commanded(now, new_target, new_target_duration);
             stroker
@@ -71,7 +76,7 @@ impl AxisPlaystate {
 
             let (new_target, new_target_duration) =
                 self.speed_limiter
-                    .limit_speed(now, action.norm_pos, orig_target_duration);
+                    .limit_command(now, action.norm_pos, orig_target_duration);
             self.speed_limiter
                 .notify_commanded(now, new_target, new_target_duration);
             stroker
@@ -89,7 +94,7 @@ impl AxisPlaystate {
 
 /// Tracks current position and limits speed.
 /// TODO should this move to `strokers` crate?
-pub(crate) struct SpeedLimiter {
+pub(crate) struct AxisLimiter {
     /// Maximum number of full-scale movements per second
     pub speed_limit: f32,
     /// Time of the last-issued command
@@ -100,9 +105,13 @@ pub(crate) struct SpeedLimiter {
     pub last_command_target_time: Instant,
     /// Target finishing position of the last-issued command
     pub last_command_target: f32,
+    /// The bottom limit of the axis
+    pub min: f32,
+    /// The top of the axis
+    pub max: f32,
 }
 
-impl SpeedLimiter {
+impl AxisLimiter {
     /// Estimates the position of the axis at the given current time.
     pub fn estimate_current_position(&self, now: Instant) -> f32 {
         if self.last_command_target_time < now {
@@ -118,9 +127,12 @@ impl SpeedLimiter {
     }
 
     /// Postprocesses a proposed order to move to `target` in `duration_millis` ms
-    /// and limits it according to the configured speed limit.
-    pub fn limit_speed(&self, now: Instant, target: f32, duration_millis: u32) -> (f32, u32) {
+    /// and limits it according to the configured bottom, top and speed limits.
+    pub fn limit_command(&self, now: Instant, target: f32, duration_millis: u32) -> (f32, u32) {
         let cur_pos = self.estimate_current_position(now);
+
+        // Apply top and bottom limits
+        let target = self.min + (self.max - self.min) * target;
 
         let delta = target - cur_pos;
 
@@ -144,14 +156,16 @@ impl SpeedLimiter {
         self.last_command_target_time = target_time;
     }
 
-    pub fn new(speed_limit: f32) -> SpeedLimiter {
+    pub fn new(speed_limit: f32, min: f32, max: f32) -> AxisLimiter {
         let now = Instant::now();
-        SpeedLimiter {
+        AxisLimiter {
             speed_limit,
             last_command_start_time: now,
             last_command_start: 0.5,
             last_command_target_time: now,
             last_command_target: 0.5,
+            min,
+            max,
         }
     }
 }
