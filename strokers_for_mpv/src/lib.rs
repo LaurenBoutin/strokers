@@ -2,7 +2,7 @@ use std::path::PathBuf;
 
 use eyre::Context;
 use flume::{Receiver, Sender};
-use mpv_client::{mpv_handle, Event, Handle};
+use mpv_client::{mpv_handle, Client, Event, Handle};
 use playthread::PlaythreadMessage;
 use tracing::{debug, error, info};
 use tracing_subscriber::{fmt::format::FmtSpan, layer::SubscriberExt, util::SubscriberInitExt};
@@ -30,6 +30,9 @@ extern "C" fn mpv_open_cplugin(handle: *mut mpv_handle) -> std::os::raw::c_int {
         .with(tracing_subscriber::fmt::layer().with_span_events(FmtSpan::CLOSE))
         .init();
     let client = Handle::from_ptr(handle);
+    let weak_client = client
+        .create_weak_client("strokers-playtask")
+        .expect("failed to create weak client");
 
     info!("strokers plugin for MPV ({}) is loaded!", client.name());
 
@@ -37,7 +40,7 @@ extern "C" fn mpv_open_cplugin(handle: *mut mpv_handle) -> std::os::raw::c_int {
     let tx2 = tx.clone();
 
     std::thread::spawn(move || {
-        if let Err(err) = start_playtask(rx, tx2) {
+        if let Err(err) = start_playtask(rx, tx2, weak_client) {
             error!("playtask failed: {err:?}")
         }
     });
@@ -142,6 +145,7 @@ extern "C" fn mpv_open_cplugin(handle: *mut mpv_handle) -> std::os::raw::c_int {
 async fn start_playtask(
     rx: Receiver<PlaythreadMessage>,
     tx: Sender<PlaythreadMessage>,
+    weak_client: Client,
 ) -> eyre::Result<()> {
     let config = strokers::load_config()
         .await
@@ -149,6 +153,6 @@ async fn start_playtask(
     let stroker = strokers::open_stroker(&config.stroker)
         .await
         .context("failed to connect to Stroker")?;
-    playthread::playtask(stroker, config, rx, tx).await?;
+    playthread::playtask(stroker, config, rx, tx, weak_client).await?;
     Ok(())
 }

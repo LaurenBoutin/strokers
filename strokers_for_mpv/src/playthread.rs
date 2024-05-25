@@ -1,7 +1,8 @@
-use std::{path::PathBuf, sync::Arc};
+use std::{path::PathBuf, sync::Arc, time::Duration};
 
 use eyre::{bail, Context, ContextCompat};
 use flume::{Receiver, Sender};
+use mpv_client::{osd, Client};
 use strokers::{
     config::LimitsConfig,
     core::{AxisKind, Stroker},
@@ -47,6 +48,7 @@ pub(crate) async fn playtask(
     config: strokers::config::RootConfig,
     rx: Receiver<PlaythreadMessage>,
     tx: Sender<PlaythreadMessage>,
+    mut weak_client: Client,
 ) -> eyre::Result<()> {
     let mut paused = false;
     let axes = stroker.axes();
@@ -164,6 +166,7 @@ pub(crate) async fn playtask(
                     .stop()
                     .await
                     .context("failed to stop stroker upon shutdown")?;
+                break;
             }
             PlaythreadMessage::KeyCommand(cmd) => match cmd {
                 KeyCommand::AxisLimitChange(cmd) => {
@@ -181,6 +184,16 @@ pub(crate) async fn playtask(
 
                     if let Err(err) = update_limits(&cmd, &mut axis.limiter) {
                         error!("Error updating axis limits for {:?}: {err:?}", cmd.axis);
+                    }
+                    if let Err(err) = osd!(
+                        weak_client,
+                        Duration::from_secs(1),
+                        "Limits: {:.4} ≤ {:?} ≤ {:.4}",
+                        axis.limiter.min,
+                        cmd.axis,
+                        axis.limiter.max
+                    ) {
+                        error!("Failed to display OSD: {err:?}");
                     }
                 }
             },
