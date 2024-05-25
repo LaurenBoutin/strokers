@@ -208,8 +208,9 @@ async fn search_for_funscripts(
         let funscript_contents = tokio::fs::read(funscript_path)
             .await
             .with_context(|| format!("failed to read {funscript_filename:?}"))?;
-        let funscript: Funscript = serde_json::from_slice(&funscript_contents)
+        let mut funscript: Funscript = serde_json::from_slice(&funscript_contents)
             .with_context(|| format!("failed to deserialise {funscript_filename:?}"))?;
+        funscript.fixup();
         let normalised_actions = normalised_from_funscript(&funscript);
 
         if let Err(_) = tx
