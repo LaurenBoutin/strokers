@@ -1,5 +1,7 @@
 use std::sync::Arc;
 
+use tracing::debug;
+
 use crate::processing::NormalisedAction;
 
 /// Tracker for playback of a funscript.
@@ -25,6 +27,7 @@ impl FunscriptPlaystate {
 
     /// Seek in the stream to a given time in milliseconds.
     pub fn seek(&mut self, time_milliseconds: u32) {
+        let idx_old = self.next_index;
         // always tick immediately so that we update our position when we get the chance
         self.next_tick_at = Some(time_milliseconds);
 
@@ -35,6 +38,14 @@ impl FunscriptPlaystate {
             Ok(idx) => idx,
             Err(idx) => idx,
         };
+
+        let idx_new = self.next_index;
+        let idx_1 = idx_new - 1;
+        let ele_1 = self.normalised_actions.get(idx_1);
+        let ele_2 = self.normalised_actions.get(idx_new);
+        let idx_3 = idx_new + 1;
+        let ele_3 = self.normalised_actions.get(idx_3);
+        debug!("sought from idx{idx_old} to idx{idx_new} ({idx_1}={ele_1:?}, {idx_new}={ele_2:?}, {idx_3}={ele_3:?})");
     }
 
     /// Inform the playstate about the current time and see if there is an action to be performed
