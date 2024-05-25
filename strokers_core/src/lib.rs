@@ -1,4 +1,5 @@
 use async_trait::async_trait;
+use serde::{Deserialize, Serialize};
 
 #[async_trait]
 pub trait Stroker {
@@ -27,7 +28,8 @@ pub struct AxisDescriptor {
 
 /// The kind of axis
 /// This includes special axes like vibration/lubricant
-#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
 #[non_exhaustive]
 pub enum AxisKind {
     /// Up/Down (T-Code: `L0`)

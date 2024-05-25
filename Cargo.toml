@@ -9,10 +9,12 @@ members = [
 resolver = "2"
 
 [workspace.dependencies]
-# Logging
+# Logging and Errors
 tracing = "0.1.40"
 tracing-subscriber = { version = "0.3.18", features = ["env-filter"] }
 eyre = "0.6.12"
+thiserror = "1.0.61"
+toml = "0.8.13"
 
 # Async
 tokio = { version = "1.37.0", features = ["rt", "macros"] }

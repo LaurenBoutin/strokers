@@ -8,3 +8,4 @@ edition = "2021"
 [dependencies]
 eyre.workspace = true
 async-trait.workspace = true
+serde.workspace = true
