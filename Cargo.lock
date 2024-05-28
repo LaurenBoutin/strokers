@@ -535,8 +535,9 @@ dependencies = [
 
 [[package]]
 name = "serial2-tokio"
-version = "0.1.10"
-source = "git+https://github.com/LaurenBoutin/serial2-tokio-rs?branch=fix_write#113c77e2e255cd285278a79f937c1ec10d3ae81a"
+version = "0.1.11"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "dacfeae69047ff48799b48e84888f69ff19ff2d66c7118520a166eb1d0afea1d"
 dependencies = [
  "libc",
  "serial2",
