@@ -1,5 +1,3 @@
-use std::path::PathBuf;
-
 use eyre::Context;
 use flume::{Receiver, Sender};
 use mpv_client::{mpv_handle, Client, Event, Handle};
@@ -68,8 +66,15 @@ extern "C" fn mpv_open_cplugin(handle: *mut mpv_handle) -> std::os::raw::c_int {
             Event::StartFile(_) => match client.get_property::<String>(PROP_PATH) {
                 Ok(new_path) => {
                     info!("New video starting: {new_path:?}");
+                    let cwd = match std::env::current_dir() {
+                        Ok(cwd) => cwd,
+                        Err(err) => {
+                            error!("Could not determine current working directory: {err:?}");
+                            continue;
+                        }
+                    };
                     if let Err(_) = tx.send(PlaythreadMessage::VideoStarting {
-                        video_path: PathBuf::from(new_path),
+                        video_path: cwd.join(new_path),
                     }) {
                         error!("New video loaded but can't send notification to playtask.")
                     }
