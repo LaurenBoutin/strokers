@@ -37,7 +37,10 @@ If your Rust setup has not been configured differently, this will appear at `tar
 ### How to use
 
 You can either copy the plugin to your plugins directory `~/.config/mpv/scripts` (I believe — yet to test this)
-or point MPV to it at the command line: `mpv --script=target/release/libstrokers_for_mpv.so path/to/fun_video.mp4`
+or point MPV to it at the command line: `mpv --script=target/release/libstrokers_for_mpv.so path/to/fun_video.mp4`.
+
+Don't specify the plugin multiple times or use both methods of loading it — this will initialise the plugin twice
+and it doesn't like this (`tracing_subscriber` error).
 
 ### How to configure
 
