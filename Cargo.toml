@@ -36,3 +36,7 @@ strokers_core = { path = "./strokers_core" }
 strokers_device_debug = { path = "./strokers_device_debug" }
 strokers_device_tcode = { path = "./strokers_device_tcode" }
 strokers_funscript = { path = "./strokers_funscript" }
+
+
+[profile.release]
+debug = 1
