@@ -10,7 +10,7 @@ name = "strokers_for_mpv"
 crate-type = ["cdylib"]
 
 [dependencies]
-mpv-client = "0.6.2"
+mpv-client = "1.0.1"
 
 strokers.workspace = true
 strokers_funscript.workspace = true

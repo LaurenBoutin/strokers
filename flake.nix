@@ -1,7 +1,7 @@
 # started off from https://github.com/NixOS/templates/blob/master/rust/flake.nix
 {
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-23.11";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-24.05";
     naersk = {
       url = "github:nix-community/naersk/master";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -21,8 +21,11 @@
           buildInputs = [
             cargo rustc rustfmt pre-commit rustPackages.clippy
             rust-analyzer
+            clang
+            mpv
           ];
           RUST_SRC_PATH = rustPlatform.rustLibSrc;
+          LIBCLANG_PATH="${pkgs.llvmPackages_latest.libclang.lib}/lib";
         };
       }
     );

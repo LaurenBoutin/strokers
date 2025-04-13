@@ -28,7 +28,12 @@
 
 ### How to build
 
-With a Rust compiler available, `cargo build --release` will build the plugin
+Prerequisites:
+
+1. You'll need a working Rust compiler — generally people use Rustup to get one; see <https://rustup.rs>.
+2. You'll also need the development headers for mpv (Ubuntu: `libmpv-dev`), clang (Ubuntu: `clang`) and *probably* other typical build tools (Ubuntu: `build-essential`).
+
+`cargo build --release` will build the plugin
 as a shared object (`.so`)/dynamically linked library (`.dll`) and emit it to your target directory.
 
 If your Rust setup has not been configured differently, this will appear at `target/release/libstrokers_for_mpv.so` or `target/debug/strokers_for_mpv.dll` (I believe — Windows is untested).
