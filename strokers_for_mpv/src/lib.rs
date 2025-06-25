@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use eyre::Context;
 use flume::{Receiver, Sender};
 use mpv_client::{mpv_handle, Client, Event, Handle};
@@ -17,6 +19,7 @@ const PROP_PAUSE: &str = "pause";
 const REPLY_PAUSE: u64 = 2;
 
 const PROP_PATH: &str = "path";
+const PROP_SCRIPT_OPTS: &str = "options/script-opts";
 
 #[no_mangle]
 extern "C" fn mpv_open_cplugin(handle: *mut mpv_handle) -> std::os::raw::c_int {
@@ -63,26 +66,46 @@ extern "C" fn mpv_open_cplugin(handle: *mut mpv_handle) -> std::os::raw::c_int {
                 let _ = tx.send(PlaythreadMessage::Shutdown {});
                 return 0;
             }
-            Event::StartFile(_) => match client.get_property::<String>(PROP_PATH) {
-                Ok(new_path) => {
-                    info!("New video starting: {new_path:?}");
-                    let cwd = match std::env::current_dir() {
-                        Ok(cwd) => cwd,
-                        Err(err) => {
-                            error!("Could not determine current working directory: {err:?}");
-                            continue;
+            Event::StartFile(_) => {
+                let options = match client.get_property::<String>(PROP_SCRIPT_OPTS) {
+                    Ok(val) => {
+                        let mut map = HashMap::new();
+                        map.insert(
+                            "funscript_path".to_string(),
+                            val.strip_prefix("funscript_path=")
+                                .unwrap_or(&val)
+                                .to_string(),
+                        );
+                        map
+                    }
+                    Err(err) => {
+                        error!("Script ops {PROP_SCRIPT_OPTS}: {err:?}");
+                        return 0;
+                    }
+                };
+
+                match client.get_property::<String>(PROP_PATH) {
+                    Ok(new_path) => {
+                        info!("New video starting: {new_path:?}");
+                        let cwd = match std::env::current_dir() {
+                            Ok(cwd) => cwd,
+                            Err(err) => {
+                                error!("Could not determine current working directory: {err:?}");
+                                continue;
+                            }
+                        };
+                        if let Err(_) = tx.send(PlaythreadMessage::VideoStarting {
+                            video_path: cwd.join(new_path),
+                            funscript_path: options.get("funscript_path").cloned(),
+                        }) {
+                            error!("New video loaded but can't send notification to playtask.")
                         }
-                    };
-                    if let Err(_) = tx.send(PlaythreadMessage::VideoStarting {
-                        video_path: cwd.join(new_path),
-                    }) {
-                        error!("New video loaded but can't send notification to playtask.")
+                    }
+                    Err(err) => {
+                        error!("New video starting but failed to get {PROP_PATH}: {err:?}");
                     }
                 }
-                Err(err) => {
-                    error!("New video starting but failed to get {PROP_PATH}: {err:?}");
-                }
-            },
+            }
             Event::PropertyChange(REPLY_TIME, time_prop) => {
                 let Some(time) = time_prop.data::<f64>() else {
                     error!("On change, can't read {PROP_TIME} as f64");

@@ -30,12 +30,12 @@ pub struct FunscriptCluster {
 /// search for funscripts that likely match the video.
 pub fn scan_for_funscripts(
     dir_listing_of_files: &Vec<String>,
-    video_name: &str,
+    scan_filename: &str,
 ) -> eyre::Result<FunscriptScan> {
-    let video_without_extension = video_name
+    let scan_filename_without_extension = scan_filename
         .rsplit_once('.')
         .map(|(a, _)| a)
-        .unwrap_or(&video_name);
+        .unwrap_or(&scan_filename);
 
     let mut scan = FunscriptScan {
         main: Default::default(),
@@ -43,7 +43,7 @@ pub fn scan_for_funscripts(
     };
 
     for file in dir_listing_of_files {
-        let Some(unextended) = file.strip_prefix(video_without_extension) else {
+        let Some(unextended) = file.strip_prefix(scan_filename_without_extension) else {
             continue;
         };
 

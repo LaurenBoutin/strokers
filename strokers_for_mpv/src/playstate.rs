@@ -50,7 +50,7 @@ impl AxisPlaystate {
                 .movement(
                     Movement::new(axis_id, new_target, new_target_duration)
                     .with_context(|| {
-                        format!("failed to construct movement from pos:{new_target}, {new_target_duration}ms")
+                        format!("failed to construct movement from pos on axis {axis_id:?}: {new_target}, {new_target_duration}ms")
                     })?,
                 )
                 .await
@@ -73,7 +73,6 @@ impl AxisPlaystate {
 
         if let Some(action) = self.funscript.tick(now_millis) {
             let now = Instant::now();
-
             // if the video is paused, give a long time to gradually move to the right position
             // that way we also likely avoid being speed limited.
             let orig_target_duration = if paused { 1000 } else { action.at - now_millis };

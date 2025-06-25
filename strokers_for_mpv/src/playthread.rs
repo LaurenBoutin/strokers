@@ -25,7 +25,10 @@ pub enum PlaythreadMessage {
     /// A new video was loaded
     /// - Unload all current funscripts
     /// - Search for new funscripts
-    VideoStarting { video_path: PathBuf },
+    VideoStarting {
+        video_path: PathBuf,
+        funscript_path: Option<String>,
+    },
     /// Use the given loaded funscript
     UseFunscript {
         axis_kind: AxisKind,
@@ -58,18 +61,11 @@ pub(crate) async fn playtask(
 
     while let Ok(msg) = rx.recv_async().await {
         match msg {
-            PlaythreadMessage::VideoStarting { video_path } => {
+            PlaythreadMessage::VideoStarting {
+                video_path,
+                funscript_path,
+            } => {
                 debug!("VideoStarting: {video_path:?}");
-                let video_dir = video_path
-                    .parent()
-                    .context("video has no parent")?
-                    .to_owned();
-                let video_filename = video_path
-                    .file_name()
-                    .context("video has no filename")?
-                    .to_str()
-                    .context("video filename is not UTF-8")?
-                    .to_owned();
 
                 if let Some(ctoken) = funscript_load_ctoken.take() {
                     ctoken.cancel();
@@ -81,7 +77,7 @@ pub(crate) async fn playtask(
                 let tx = tx.clone();
                 tokio::task::spawn(async move {
                     tokio::select! {
-                        res = search_for_funscripts(video_dir, video_filename, tx) => {
+                        res = search_for_funscripts(video_path, funscript_path, tx) => {
                             if let Err(err) = res {
                                 error!("failed to handle VideoLoaded: {err:?}");
                             }
@@ -133,7 +129,7 @@ pub(crate) async fn playtask(
                     axis_playstate
                         .seek(now_millis, paused, axis_id, &mut stroker)
                         .await
-                        .context("failed AP tick")?;
+                        .context("Seek: failed AP tick")?;
                 }
             }
             PlaythreadMessage::TimeChange { now_millis } => {
@@ -144,7 +140,7 @@ pub(crate) async fn playtask(
                     axis_playstate
                         .tick(now_millis, axis_id, &mut stroker)
                         .await
-                        .context("failed AP tick")?;
+                        .context("TimeChange: failed AP tick")?;
                 }
             }
             PlaythreadMessage::PauseChange { paused: new_paused } => {
@@ -242,13 +238,38 @@ fn update_limits(cmd: &AxisLimitChangeCommand, limits: &mut AxisLimiter) -> eyre
 /// TODO Currently this only searches for and loads 'main' cluster funscripts;
 /// we should expand this in the future somehow.
 async fn search_for_funscripts(
-    video_dir: PathBuf,
-    video_filename: String,
+    video_path: PathBuf,
+    funscript_path: Option<String>,
     tx: Sender<PlaythreadMessage>,
 ) -> eyre::Result<()> {
-    let mut read_dir = tokio::fs::read_dir(&video_dir)
-        .await
-        .context("can't read")?;
+    let (scan_filename, scan_dir) = match funscript_path {
+        Some(s) => (
+            PathBuf::from(&s)
+                .file_name()
+                .context("funscript has no filename")?
+                .to_str()
+                .context("funscript filename is not UTF-8")?
+                .to_string(),
+            PathBuf::from(&s)
+                .parent()
+                .context("funscript has no parent")?
+                .to_owned(),
+        ),
+        None => (
+            video_path
+                .file_name()
+                .context("video has no filename")?
+                .to_str()
+                .context("video filename is not UTF-8")?
+                .to_string(),
+            video_path
+                .parent()
+                .context("video has no parent")?
+                .to_owned(),
+        ),
+    };
+
+    let mut read_dir = tokio::fs::read_dir(&scan_dir).await.context("can't read")?;
 
     let mut filenames_in_dir: Vec<String> = Vec::new();
     while let Some(dir_entry) = read_dir
@@ -272,11 +293,12 @@ async fn search_for_funscripts(
         filenames_in_dir.push(filename.to_owned());
     }
 
-    let scan = scan_for_funscripts(&filenames_in_dir, &video_filename)
+    let scan = scan_for_funscripts(&filenames_in_dir, &scan_filename)
         .context("failed funscript scan from list of filenames")?;
 
     for (&axis_kind, funscript_filename) in &scan.main.scripts {
-        let funscript_path = video_dir.join(funscript_filename);
+        let funscript_path = scan_dir.join(funscript_filename);
+        debug!("Loading funscript[{axis_kind:?}]: {funscript_path:?}");
         let funscript_contents = tokio::fs::read(funscript_path)
             .await
             .with_context(|| format!("failed to read {funscript_filename:?}"))?;
