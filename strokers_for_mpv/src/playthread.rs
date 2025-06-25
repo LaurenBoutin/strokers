@@ -243,18 +243,23 @@ async fn search_for_funscripts(
     tx: Sender<PlaythreadMessage>,
 ) -> eyre::Result<()> {
     let (scan_filename, scan_dir) = match funscript_path {
-        Some(s) => (
-            PathBuf::from(&s)
-                .file_name()
-                .context("funscript has no filename")?
-                .to_str()
-                .context("funscript filename is not UTF-8")?
-                .to_string(),
-            PathBuf::from(&s)
-                .parent()
-                .context("funscript has no parent")?
-                .to_owned(),
-        ),
+        Some(s) => {
+            // If the path is relative, resolve it next to the current working directory
+            // Otherwise if it's absolute, it will be handled correctly by `join`.
+            let full_funscript_path = PathBuf::from(".").join(s);
+            (
+                full_funscript_path
+                    .file_name()
+                    .context("funscript has no filename")?
+                    .to_str()
+                    .context("funscript filename is not UTF-8")?
+                    .to_string(),
+                full_funscript_path
+                    .parent()
+                    .context("funscript has no parent")?
+                    .to_owned(),
+            )
+        }
         None => (
             video_path
                 .file_name()
@@ -269,7 +274,9 @@ async fn search_for_funscripts(
         ),
     };
 
-    let mut read_dir = tokio::fs::read_dir(&scan_dir).await.context("can't read")?;
+    let mut read_dir = tokio::fs::read_dir(&scan_dir)
+        .await
+        .with_context(|| format!("can't read dir: {scan_dir:?}"))?;
 
     let mut filenames_in_dir: Vec<String> = Vec::new();
     while let Some(dir_entry) = read_dir
