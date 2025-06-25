@@ -21,10 +21,10 @@ for more information: [strokers_for_mpv](./strokers_for_mpv).
 
 ## Licence
 
-This project is currently under the GNU AGPL v3.0 or later.
+Licensed under either of [Apache License, Version 2.0](./LICENSE-APACHE) or [MIT license](./LICENSE-MIT) at your option.
 
-As this is currently all my own work, this licence choice is subject to change in the future.
-It will remain open source though.
+Unless you explicitly state otherwise, any contribution intentionally submitted for inclusion in this crate by you,
+as defined in the Apache-2.0 license, shall be dual licensed as above, without any additional terms or conditions. 
 
 ## Home Repository
 

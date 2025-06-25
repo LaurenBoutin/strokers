@@ -132,11 +132,10 @@ Adjacent funscripts for other axes will be detected automatically.
 
 ## Licence
 
-This plugin is currently under the GNU AGPL v3 or later.
+Licensed under either of [Apache License, Version 2.0](../LICENSE-APACHE) or [MIT license](../LICENSE-MIT) at your option.
 
-As this is all my own work and I am indecisive, this is still subject to change,
-but I obviously can't take this away from you so this current copy of the software
-is always open source (and I intend to keep future versions that way).
+Unless you explicitly state otherwise, any contribution intentionally submitted for inclusion in this crate by you,
+as defined in the Apache-2.0 license, shall be dual licensed as above, without any additional terms or conditions. 
 
 ## Alternative Software
 
