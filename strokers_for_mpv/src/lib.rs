@@ -70,12 +70,9 @@ extern "C" fn mpv_open_cplugin(handle: *mut mpv_handle) -> std::os::raw::c_int {
                 let options = match client.get_property::<String>(PROP_SCRIPT_OPTS) {
                     Ok(val) => {
                         let mut map = HashMap::new();
-                        map.insert(
-                            "funscript_path".to_string(),
-                            val.strip_prefix("funscript_path=")
-                                .unwrap_or(&val)
-                                .to_string(),
-                        );
+                        if let Some(funscript_path) = val.strip_prefix("funscript_path=") {
+                            map.insert("funscript_path", funscript_path.to_owned());
+                        }
                         map
                     }
                     Err(err) => {
