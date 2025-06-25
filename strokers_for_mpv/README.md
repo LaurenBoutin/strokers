@@ -123,6 +123,13 @@ The values are all tweakable and you can set both limits in the same binding if 
 
 An axis can be disabled by setting the min and max to the same value.
 
+#### Overriding the funscript path
+
+The argument `--script-opt=funscript_path=path/to/my.funscript` can be passed to MPV, in order to override
+the funscript in use by the plugin.
+
+Adjacent funscripts for other axes will be detected automatically.
+
 ## Licence
 
 This plugin is currently under the GNU AGPL v3 or later.
