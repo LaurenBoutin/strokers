@@ -46,6 +46,7 @@ mod tests {
                         inverted: $inverted,
                         range: $range,
                         actions: Vec::from([FunscriptAction { at: 0, pos: $pos }]),
+                        axes: Vec::new(),
                         unknown: json!(null),
                     },
                     norm_pos_expected: $norm_pos_expected,

@@ -321,7 +321,21 @@ async fn search_for_funscripts(
             })
             .await
         {
-            warn!("loaded funscript but failed to send to playtask");
+            warn!("loaded funscript {funscript_filename} but failed to send to playtask");
+        }
+
+        for (axis_kind, funscript) in funscript.get_axes_funscript().into_iter() {
+            let normalised_actions = normalised_from_funscript(&funscript);
+            debug!("Loading funscript extra axe[{axis_kind:?}]: {funscript_filename}");
+            if let Err(_) = tx
+                .send_async(PlaythreadMessage::UseFunscript {
+                    axis_kind,
+                    normalised_actions,
+                })
+                .await
+            {
+                warn!("loaded funscript {funscript_filename} but failed to send extra axe {axis_kind:?} to playtask");
+            }
         }
     }
 

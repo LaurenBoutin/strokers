@@ -1,4 +1,5 @@
 use async_trait::async_trait;
+use eyre::{bail, Result};
 use serde::{Deserialize, Serialize};
 
 #[async_trait]
@@ -103,5 +104,23 @@ impl Movement {
 
     pub fn ramp_time_milliseconds(&self) -> u32 {
         self.ramp_time_milliseconds
+    }
+}
+
+pub fn tcode_axis_name_to_kind(name: &str) -> Result<AxisKind, eyre::Error> {
+    match name {
+        "L0" => Ok(AxisKind::Stroke),
+        "L1" => Ok(AxisKind::Surge),
+        "L2" => Ok(AxisKind::Sway),
+        "R0" => Ok(AxisKind::Twist),
+        "R1" => Ok(AxisKind::Roll),
+        "R2" => Ok(AxisKind::Pitch),
+        "V0" => Ok(AxisKind::Vibration),
+        "A0" => Ok(AxisKind::Valve),
+        "A1" => Ok(AxisKind::Suction),
+        "A2" => Ok(AxisKind::Lubricant),
+        other => {
+            bail!("Unrecognised T-Code axis: {other:?}");
+        }
     }
 }

@@ -4,13 +4,14 @@ use async_trait::async_trait;
 use eyre::{Context, ContextCompat};
 use futures_util::SinkExt;
 use serial2_tokio::SerialPort;
-use strokers_core::{AxisDescriptor, AxisId, AxisKind, Stroker};
+use strokers_core::{AxisDescriptor, AxisId, Stroker};
 use tokio::time::timeout;
 use tokio_stream::StreamExt;
 use tokio_util::codec::{Decoder, Framed, LinesCodec};
 use tracing::{debug, error, warn};
 
 use crate::tcode::{movement_to_tcode, DiscoveredAxisInfo};
+use strokers_core::tcode_axis_name_to_kind;
 
 pub struct SerialTCodeStroker {
     port: Framed<SerialPort, LinesCodec>,
@@ -96,23 +97,15 @@ impl Stroker for SerialTCodeStroker {
     fn axes(&mut self) -> Vec<strokers_core::AxisDescriptor> {
         let mut result = Vec::with_capacity(self.axis_map.len());
         for (&axis_id, axis) in &self.axis_map {
-            let axis_kind = match axis.tcode_axis_name.as_str() {
-                "L0" => AxisKind::Stroke,
-                "L1" => AxisKind::Surge,
-                "L2" => AxisKind::Sway,
-                "R0" => AxisKind::Twist,
-                "R1" => AxisKind::Roll,
-                "R2" => AxisKind::Pitch,
-                "V0" => AxisKind::Vibration,
-                "A0" => AxisKind::Valve,
-                "A1" => AxisKind::Suction,
-                "A2" => AxisKind::Lubricant,
-                other => {
-                    warn!("Unrecognised T-Code axis: {other:?}; ignoring.");
+            match tcode_axis_name_to_kind(axis.tcode_axis_name.as_str()) {
+                Ok(axis_kind) => {
+                    result.push(AxisDescriptor { axis_id, axis_kind });
+                }
+                Err(err) => {
+                    warn!("{err}");
                     continue;
                 }
-            };
-            result.push(AxisDescriptor { axis_id, axis_kind });
+            }
         }
         result
     }
