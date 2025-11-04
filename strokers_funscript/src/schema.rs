@@ -5,7 +5,6 @@ use serde_json::json;
 use std::collections::BTreeMap;
 use tracing::warn;
 
-use strokers_core::tcode_axis_name_to_kind;
 use strokers_core::AxisKind;
 
 /// A funscript is a JSON-encoded document that describes how one axis moves throughout time.
@@ -60,7 +59,7 @@ impl Funscript {
     pub fn get_axes_funscript(&mut self) -> BTreeMap<AxisKind, Funscript> {
         self.axes
             .iter()
-            .filter_map(|axe| match tcode_axis_name_to_kind(&axe.id) {
+            .filter_map(|axe| match AxisKind::try_from_tcode_axis_name(&axe.id) {
                 Ok(axis_kind) => {
                     let script = Funscript {
                         actions: axe.actions.clone(),

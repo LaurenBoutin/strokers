@@ -4,14 +4,13 @@ use async_trait::async_trait;
 use eyre::{Context, ContextCompat};
 use futures_util::SinkExt;
 use serial2_tokio::SerialPort;
-use strokers_core::{AxisDescriptor, AxisId, Stroker};
+use strokers_core::{AxisDescriptor, AxisId, AxisKind, Stroker};
 use tokio::time::timeout;
 use tokio_stream::StreamExt;
 use tokio_util::codec::{Decoder, Framed, LinesCodec};
 use tracing::{debug, error, warn};
 
 use crate::tcode::{movement_to_tcode, DiscoveredAxisInfo};
-use strokers_core::tcode_axis_name_to_kind;
 
 pub struct SerialTCodeStroker {
     port: Framed<SerialPort, LinesCodec>,
@@ -97,7 +96,7 @@ impl Stroker for SerialTCodeStroker {
     fn axes(&mut self) -> Vec<strokers_core::AxisDescriptor> {
         let mut result = Vec::with_capacity(self.axis_map.len());
         for (&axis_id, axis) in &self.axis_map {
-            match tcode_axis_name_to_kind(axis.tcode_axis_name.as_str()) {
+            match AxisKind::try_from_tcode_axis_name(axis.tcode_axis_name.as_str()) {
                 Ok(axis_kind) => {
                     result.push(AxisDescriptor { axis_id, axis_kind });
                 }
