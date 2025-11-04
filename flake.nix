@@ -1,7 +1,7 @@
 # started off from https://github.com/NixOS/templates/blob/master/rust/flake.nix
 {
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-24.05";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.05";
     naersk = {
       url = "github:nix-community/naersk/master";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -30,4 +30,3 @@
       }
     );
 }
-
