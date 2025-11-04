@@ -1,15 +1,16 @@
-use std::collections::HashMap;
-
 use eyre::Context;
 use flume::{Receiver, Sender};
-use mpv_client::{mpv_handle, Client, Event, Handle};
+use mpv_client::{mpv_handle, Client, Event, Handle, Node};
 use playthread::PlaythreadMessage;
+use std::collections::HashMap;
 use tracing::{debug, error, info};
 use tracing_subscriber::{fmt::format::FmtSpan, layer::SubscriberExt, util::SubscriberInitExt};
 
 use crate::keybindings::parse_action;
+use parse_opts::get_node_string_map;
 
 pub(crate) mod keybindings;
+mod parse_opts;
 pub(crate) mod playstate;
 mod playthread;
 
@@ -67,17 +68,11 @@ extern "C" fn mpv_open_cplugin(handle: *mut mpv_handle) -> std::os::raw::c_int {
                 return 0;
             }
             Event::StartFile(_) => {
-                let options = match client.get_property::<String>(PROP_SCRIPT_OPTS) {
-                    Ok(val) => {
-                        let mut map = HashMap::new();
-                        if let Some(funscript_path) = val.strip_prefix("funscript_path=") {
-                            map.insert("funscript_path", funscript_path.to_owned());
-                        }
-                        map
-                    }
+                let options = match client.get_property::<Node>(PROP_SCRIPT_OPTS) {
+                    Ok(opts) => get_node_string_map(opts),
                     Err(err) => {
                         error!("Script ops {PROP_SCRIPT_OPTS}: {err:?}");
-                        return 0;
+                        HashMap::new()
                     }
                 };
 
