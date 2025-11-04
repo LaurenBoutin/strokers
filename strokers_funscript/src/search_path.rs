@@ -35,7 +35,7 @@ pub fn scan_for_funscripts(
     let scan_filename_without_extension = scan_filename
         .rsplit_once('.')
         .map(|(a, _)| a)
-        .unwrap_or(&scan_filename);
+        .unwrap_or(scan_filename);
 
     let mut scan = FunscriptScan {
         main: Default::default(),

@@ -7,6 +7,12 @@ use tracing::{debug, error};
 #[non_exhaustive]
 pub struct DebugStroker {}
 
+impl Default for DebugStroker {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl DebugStroker {
     pub fn new() -> DebugStroker {
         DebugStroker {}
@@ -26,7 +32,7 @@ const AXES: &[(AxisId, AxisKind)] = &[
 impl Stroker for DebugStroker {
     fn axes(&mut self) -> Vec<AxisDescriptor> {
         let result = AXES
-            .into_iter()
+            .iter()
             .cloned()
             .map(|(axis_id, axis_kind)| AxisDescriptor { axis_id, axis_kind })
             .collect();
@@ -40,7 +46,7 @@ impl Stroker for DebugStroker {
     }
 
     async fn movement(&mut self, movement: Movement) -> eyre::Result<()> {
-        match AXES.into_iter().find(|(id, _)| *id == movement.axis()) {
+        match AXES.iter().find(|(id, _)| *id == movement.axis()) {
             Some((_, axis_kind)) => {
                 debug!(
                     "movement({axis_kind:?}={:?} to {:.4} in {} ms)",

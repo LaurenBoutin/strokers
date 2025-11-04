@@ -97,7 +97,7 @@ impl Movement {
     /// Returns the Movement or `None` if the specified parameters were not valid.
     pub fn new(axis: AxisId, target: f32, ramp_time_milliseconds: u32) -> Option<Movement> {
         const MAX_RAMP_TIME_MS: u32 = 9999999;
-        if target < 0.0 || target > 1.0 {
+        if !(0.0..=1.0).contains(&target) {
             return None;
         };
         if !target.is_finite() {

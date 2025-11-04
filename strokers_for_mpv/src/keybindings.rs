@@ -23,7 +23,7 @@ pub struct AxisLimitChangeCommand {
 }
 
 pub fn parse_action(action: &str) -> eyre::Result<KeyCommand> {
-    let (action_name, action_args_qs) = action.split_once(' ').unwrap_or((&action, ""));
+    let (action_name, action_args_qs) = action.split_once(' ').unwrap_or((action, ""));
 
     match action_name {
         "axis_limit" => {

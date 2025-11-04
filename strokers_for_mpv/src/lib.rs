@@ -86,10 +86,13 @@ extern "C" fn mpv_open_cplugin(handle: *mut mpv_handle) -> std::os::raw::c_int {
                                 continue;
                             }
                         };
-                        if let Err(_) = tx.send(PlaythreadMessage::VideoStarting {
-                            video_path: cwd.join(new_path),
-                            funscript_path: options.get("funscript_path").cloned(),
-                        }) {
+                        if tx
+                            .send(PlaythreadMessage::VideoStarting {
+                                video_path: cwd.join(new_path),
+                                funscript_path: options.get("funscript_path").cloned(),
+                            })
+                            .is_err()
+                        {
                             error!("New video loaded but can't send notification to playtask.")
                         }
                     }
@@ -116,7 +119,7 @@ extern "C" fn mpv_open_cplugin(handle: *mut mpv_handle) -> std::os::raw::c_int {
                     error!("can't read {PROP_PAUSE} as bool");
                     continue;
                 };
-                if let Err(_) = tx.send(PlaythreadMessage::PauseChange { paused }) {
+                if tx.send(PlaythreadMessage::PauseChange { paused }).is_err() {
                     error!("Couldn't send pause change status to playtask.");
                 }
             }
@@ -129,9 +132,12 @@ extern "C" fn mpv_open_cplugin(handle: *mut mpv_handle) -> std::os::raw::c_int {
                 else {
                     continue;
                 };
-                if let Err(_) = tx.send(PlaythreadMessage::Seek {
-                    now_millis: time_millis_u32,
-                }) {
+                if tx
+                    .send(PlaythreadMessage::Seek {
+                        now_millis: time_millis_u32,
+                    })
+                    .is_err()
+                {
                     error!("Couldn't send seek event to playtask.");
                 }
             }
@@ -142,10 +148,10 @@ extern "C" fn mpv_open_cplugin(handle: *mut mpv_handle) -> std::os::raw::c_int {
                     continue;
                 }
 
-                match parse_action(&args[1]) {
+                match parse_action(args[1]) {
                     Ok(action) => {
                         debug!("Keybinding triggered: {action:?}");
-                        if let Err(_) = tx.send(PlaythreadMessage::KeyCommand(action)) {
+                        if tx.send(PlaythreadMessage::KeyCommand(action)).is_err() {
                             error!("Couldn't send key command to playtask.");
                         }
                     }

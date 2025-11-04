@@ -50,9 +50,7 @@ impl FunscriptPlaystate {
 
     /// Inform the playstate about the current time and see if there is an action to be performed
     pub fn tick(&mut self, time_milliseconds: u32) -> Option<NormalisedAction> {
-        let Some(next_tick_at) = self.next_tick_at else {
-            return None;
-        };
+        let next_tick_at = self.next_tick_at?;
 
         if time_milliseconds < next_tick_at {
             return None;
