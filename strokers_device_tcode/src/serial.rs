@@ -96,23 +96,15 @@ impl Stroker for SerialTCodeStroker {
     fn axes(&mut self) -> Vec<strokers_core::AxisDescriptor> {
         let mut result = Vec::with_capacity(self.axis_map.len());
         for (&axis_id, axis) in &self.axis_map {
-            let axis_kind = match axis.tcode_axis_name.as_str() {
-                "L0" => AxisKind::Stroke,
-                "L1" => AxisKind::Surge,
-                "L2" => AxisKind::Sway,
-                "R0" => AxisKind::Twist,
-                "R1" => AxisKind::Roll,
-                "R2" => AxisKind::Pitch,
-                "V0" => AxisKind::Vibration,
-                "A0" => AxisKind::Valve,
-                "A1" => AxisKind::Suction,
-                "A2" => AxisKind::Lubricant,
-                other => {
-                    warn!("Unrecognised T-Code axis: {other:?}; ignoring.");
+            match AxisKind::try_from_tcode_axis_name(axis.tcode_axis_name.as_str()) {
+                Ok(axis_kind) => {
+                    result.push(AxisDescriptor { axis_id, axis_kind });
+                }
+                Err(err) => {
+                    warn!("{err}");
                     continue;
                 }
-            };
-            result.push(AxisDescriptor { axis_id, axis_kind });
+            }
         }
         result
     }

@@ -1,4 +1,5 @@
 use async_trait::async_trait;
+use eyre::{bail, Result};
 use serde::{Deserialize, Serialize};
 
 #[async_trait]
@@ -51,6 +52,26 @@ pub enum AxisKind {
     Suction,
     /// (T-Code: `A2`)
     Lubricant,
+}
+
+impl AxisKind {
+    pub fn try_from_tcode_axis_name(name: &str) -> Result<Self, eyre::Error> {
+        match name {
+            "L0" => Ok(AxisKind::Stroke),
+            "L1" => Ok(AxisKind::Surge),
+            "L2" => Ok(AxisKind::Sway),
+            "R0" => Ok(AxisKind::Twist),
+            "R1" => Ok(AxisKind::Roll),
+            "R2" => Ok(AxisKind::Pitch),
+            "V0" => Ok(AxisKind::Vibration),
+            "A0" => Ok(AxisKind::Valve),
+            "A1" => Ok(AxisKind::Suction),
+            "A2" => Ok(AxisKind::Lubricant),
+            other => {
+                bail!("Unrecognised T-Code axis: {other:?}");
+            }
+        }
+    }
 }
 
 /// Describes a desired movement.
