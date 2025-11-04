@@ -27,8 +27,9 @@ pub struct Funscript {
     pub range: u32,
 
     /// Multiscript can contains all axes in the same file under the `axes` field
+    /// This field is not present on single-axis funscripts.
     #[serde(default)]
-    pub axes: Vec<FunscriptAxe>,
+    pub axes: Vec<FunscriptAxis>,
 
     /// Keys that we don't know about or don't care to implement right now.
     /// This just ensures they get preserved if we re-emit the file.
@@ -55,14 +56,15 @@ impl Funscript {
         }
     }
 
-    /// Return a funscript for the extra axis defined in the file
-    pub fn get_axes_funscript(&mut self) -> BTreeMap<AxisKind, Funscript> {
+    /// For the bundled/extra axes in a multiscript, convert each axis to its own
+    /// [`Funscript`] for convenience.
+    pub fn get_axes_funscripts(&mut self) -> BTreeMap<AxisKind, Funscript> {
         self.axes
             .iter()
-            .filter_map(|axe| match AxisKind::try_from_tcode_axis_name(&axe.id) {
+            .filter_map(|axis| match AxisKind::try_from_tcode_axis_name(&axis.id) {
                 Ok(axis_kind) => {
                     let script = Funscript {
-                        actions: axe.actions.clone(),
+                        actions: axis.actions.clone(),
                         inverted: self.inverted,
                         range: self.range,
                         axes: Vec::new(),
@@ -71,7 +73,7 @@ impl Funscript {
                     Some((axis_kind, script))
                 }
                 Err(err) => {
-                    warn!("{err}");
+                    warn!("{err} (in multiscript)");
                     None
                 }
             })
@@ -90,9 +92,10 @@ pub struct FunscriptAction {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct FunscriptAxe {
-    // Name of the axe
+pub struct FunscriptAxis {
+    /// Name of the axis
     pub id: String,
+
     /// List of actions **sorted by timestamp order**
     /// (or at least I am claiming this needs to be sorted until proven otherwise)
     pub actions: Vec<FunscriptAction>,
